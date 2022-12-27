@@ -3,26 +3,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define TOTAL_VERTIX 7668
 #define MAX_STRING_SIZE 100
 int vertix_count=0;
 int edge_count=0;
 
-vertix* root[4806];
+vertix* root[TOTAL_VERTIX];
+int edges[TOTAL_VERTIX][TOTAL_VERTIX];
 
-//Function to find the vertix from their stop id
-vertix* find_vertix_by_stopId(int id){
-    for (int i = 0; i < 4806; i++)
-    {
-        if (root[i]->stopId==id)
-        {
-            return root[i];
-        }
-        
-    }
-    return NULL;
-    
-}
-
+//CODE RELATED TO CSV FILES
 //Provides next field of the csv file
 int next_field( char *buffer, FILE *f ) {
     int cnt=0;
@@ -51,48 +40,7 @@ int next_field( char *buffer, FILE *f ) {
 	
 }
 
-int load_edges ( char *fname ){
-    FILE* f=fopen("edges.csv","r");
-    char buf[MAX_STRING_SIZE];
-    int flag;
-    for (int i = 0; i < 3; i++)
-    {
-        flag=next_field(buf,f);
-    }
-    while (flag!=2)
-    {
-        flag=next_field(buf,f);
-        vertix* from=find_vertix_by_stopId(atoi(buf));
-        flag=next_field(buf,f);
-        int to=atoi(buf);
-        // vertix* to=find_vertix_by_stopId(atoi(buf));
-        flag=next_field(buf,f);
-        int weight=atoi(buf);
-
-        edge* new_edge=malloc(sizeof(edge));
-        new_edge->destination=to;
-        new_edge->weight=weight;
-
-        if (from->adjacent==NULL)
-        {
-            new_edge->next=NULL;
-            from->adjacent=new_edge;
-        }else{
-            edge* tmp=from->adjacent;
-            from->adjacent=new_edge;
-            new_edge->next=tmp;
-        }
-
-       
-
-        edge_count++;    
-    }
-    
-    printf("Loaded %d edges\n",edge_count);
-
-}
-
-int load_vertices ( char *fname ){
+int load_vertices (){
 
     FILE* f=fopen("vertices.csv","r");
     char buf[MAX_STRING_SIZE];
@@ -121,150 +69,180 @@ int load_vertices ( char *fname ){
         flag=next_field(buf,f);
         // val->lon=buf;
         strcpy(val->lon,buf);
-        val->adjacent=NULL;
-        root[vertix_count++]=val;
+        root[val->stopId]=val;
+        vertix_count++;
+
     }
     printf("Loaded %d vertices\n",vertix_count);
 }
 
 
-// //returns min_distance vertix node
-// int djikstra(int currentNode,int min_distance_vertix){
-//     vertix* start=find_vertix_by_stopId(currentNode);
-//     vertix* min_dist_vertix;
-//     int vertix_min_distance;
-//     if (min_distance_vertix!=-1)
-//     {
-//         min_dist_vertix=find_vertix_by_stopId(min_distance_vertix);
-//         vertix_min_distance=min_distance_vertix; //returning the stop id of min distance node
-//     }else{
-//         min_dist_vertix=NULL;
-//         vertix_min_distance=-1;
-//     }
+int load_edges(){
+    FILE* f=fopen("edges.csv","r");
+    char buf[MAX_STRING_SIZE];
+    int flag;
+
+    //Making all edges -1
+    for (int i = 0; i < TOTAL_VERTIX; i++)
+    {
+        for (int j = 0; j < TOTAL_VERTIX; j++)
+        {
+            edges[i][j]=-1;
+        }
+        
+    }
     
 
-//     edge* ptr=start->adjacent;
-//     int distance_till_now=start->distance;
-//     while (ptr!=NULL)
-//     {
-//         vertix* node=find_vertix_by_stopId(ptr->destination);
-//         if (node->last==-1)
-//         {
-//             node->last=currentNode;
-//             node->distance=distance_till_now+ptr->weight;
-//         }
-//         else if (node->distance>distance_till_now+start->distance)
-//         {
-//             node->last=currentNode;
-//             node->distance=distance_till_now+ptr->weight;
-//         }
-
-//         //Code to find the minimum distance vertix
-//         if (vertix_min_distance==-1)
-//         {
-//             vertix_min_distance=node->stopId;
-//             min_dist_vertix=find_vertix_by_stopId(vertix_min_distance);
-//         }
-//         else if (node->distance<min_dist_vertix->distance)
-//         {
-//             vertix_min_distance=node->stopId;
-//             min_dist_vertix=find_vertix_by_stopId(vertix_min_distance);
-//         }
-        
-        
-//         ptr=ptr->next;
-        
-//     }
-//     return vertix_min_distance;
+    //skipping titles
+    for (int i = 0; i < 3; i++)
+    {
+        flag=next_field(buf,f);
+    }
+    while (flag!=2)
+    {
+        flag=next_field(buf,f);
+        int from=atoi(buf);
+        flag=next_field(buf,f);
+        int to=atoi(buf);
+        flag=next_field(buf,f);
+        int weight=atoi(buf);
+        edges[from][to]=weight;
+        edges[to][from]=weight;
+        edge_count++;    
+    }
     
-// }
-
-// void printPath(int startNode,int endNode){
-//     if (startNode==endNode)
-//     {
-//         printf(" %d->",endNode);
-//         return;
-//     }
-    
-//     vertix* end=find_vertix_by_stopId(endNode);
-//     printf(" %d->",endNode);
-//     printPath(startNode,end->last);
-    
-// }
-
-void shortest_path(int startNode, int endNode){
-//     vertix* start=find_vertix_by_stopId(startNode);
-//     start->permanent=1;
-//     vertix* end=find_vertix_by_stopId(endNode);
-//     int min_vertix_stopId=-1;
-//     while (end->permanent==0)
-//     {
-//         min_vertix_stopId=djikstra(startNode,min_vertix_stopId);
-//         if (min_vertix_stopId==-1)
-//         {
-//             printf("\nNO PATH FOUND!");
-//             return;
-//         }
-        
-//         vertix* min_vertix=find_vertix_by_stopId(min_vertix_stopId);
-//         min_vertix->permanent=1;
-//     }
-    
-    
-//     printPath(startNode,endNode);
+    printf("Loaded %d edges\n",edge_count);
 
 }
 
-
-void free_memory ( void ){
-    for (int i = 0; i < 4806; i++)
-    {
-
-        
-        edge* ptr=root[i]->adjacent;
-        if (ptr==NULL)
+//FINDS SHORTEST DISTANCE FROM NODES WHICH ARE NOT PERMANENT
+int shortest_distance_vertix(){
+    int ans=-1;
+    for (int i = 0; i < TOTAL_VERTIX; i++)
+    {   
+        if (root[i]==NULL)
         {
-            free(ptr);
             continue;
         }
         
-        edge* ptr_next=ptr->next;
-        while (ptr_next!=NULL)
-        {
-            free(ptr);
-            ptr=ptr_next;
-            ptr_next=ptr_next->next;
+        if(root[i]->permanent==0 && root[i]->distance>=0){
+            ans=i;
+            break;
         }
-        free(ptr);
-        free(root[i]);
+    }
+    for (int i = ans+1; i < TOTAL_VERTIX; i++)
+    {   
+        if (root[i]==NULL)
+        {
+            continue;
+        }
         
+        if(root[i]->permanent==0 && root[i]->distance>=0){
+            
+            if (root[i]->distance<root[ans]->distance)
+            {
+                ans=i;
+            }
+        }
+    }
+    return ans;
+}
+
+
+
+//PRINT THE SHORTEST PATH
+void shortest_path(int startNode, int endNode){
+    if (startNode==endNode)
+    {
+        return;
+    }
+    
+    int current_node=startNode;
+    root[current_node]->permanent=1;
+
+    //updating distances
+    for (int i = 0; i < TOTAL_VERTIX; i++)
+    {
+        if (edges[current_node][i]>=0)
+        {   
+            //updating the distance if shorter distance found
+            if (root[i]->distance > root[current_node]->distance+edges[current_node][i] || root[i]->distance==-1)
+            {
+                root[i]->distance=root[current_node]->distance+edges[current_node][i];
+                root[i]->last=current_node;
+            }
+            
+            
+        }
+        
+    }
+
+    int shortest_distance=shortest_distance_vertix();
+    if(shortest_distance==-1){
+        printf("SOME ERROR WITH SHORTEST DISTANCE!");
+        return;
+    }
+    // root[shortest_distance]->last=current_node;
+    shortest_path(shortest_distance,endNode);
+    
+
+}
+int sol[TOTAL_VERTIX];
+int cnt=0;
+//PRINT PATH
+void print_path(int startNode, int endNode){
+
+    if (startNode==endNode)
+    {   
+        // printf(" %d->",endNode);
+        sol[cnt++]=endNode;
+        return;
+    }
+
+    // printf(" %d->",endNode);
+    sol[cnt++]=endNode;
+    print_path(startNode,root[endNode]->last);
+
+}
+
+void print_answer(){
+    printf("StopID\t Name\n");
+    for (int i = cnt-1; i >= 0; i--)
+    {
+        printf("%3d\t %s\n",root[sol[i]]->stopId,root[sol[i]]->name);
     }
     
 }
 
-//TO BE DELETED
-/*
-void print_graph(){
-    for (int i = 0; i < 10; i++)
+
+
+//HELPER FUNCTIONS
+int print_edges(){
+    for (int i = 0; i < TOTAL_VERTIX; i++)
     {
-        printf("\n%d %s %s %s",root[i]->stopId,root[i]->name,root[i]->lat,root[i]->lon);
-        edge* ptr=root[i]->adjacent;
-        while (ptr!=NULL)
-        {
-            printf(" %d",ptr->destination);
-            ptr=ptr->next;
+        for(int j=0;j<TOTAL_VERTIX;j++){
+            printf("%d ",edges[i][j]);
         }
-        
+        printf("\n");
     }
     
 }
+
 
 int main(){
-    load_vertices("vertices.csv");
-    load_edges("edges.csv");
-    // print();
 
-    // get the start and end point
+    load_vertices();
+    load_edges();
+
+    // for (int i = 0; i < TOTAL_VERTIX; i++)
+    // {
+    //     if (root[i])
+    //     printf("%d\n",root[i]->stopId);
+    // }
+    
+
+    
+     // get the start and end point
     printf("\nPlease enter stating bus stop >\t\t");
     int startingNode;
     scanf("%d", &startingNode);
@@ -273,11 +251,8 @@ int main(){
     scanf("%d", &endingNode);
 
 	shortest_path(startingNode, endingNode);
-    
+    print_path(startingNode,endingNode);
+    print_answer();
 
-    
-
-
-	free_memory();
+    return 1;
 }
-*/
